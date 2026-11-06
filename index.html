@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en" data-theme="phosphor">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EJECT — out before the dev</title>
+<meta name="description" content="Watches the dev and insider wallets on every coin you hold. The block they sell, you're out.">
+<meta name="theme-color" content="#050806">
+<meta property="og:title" content="EJECT — out before the dev"><meta property="og:description" content="Watches the dev and insider wallets on every coin you hold. The block they sell, you're out.">
+<meta property="og:type" content="website"><meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="/og.png">
+<link rel="icon" href="/fav.png"><link rel="apple-touch-icon" href="/fav.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== termkit site system ===== */
+:root{
+  --bg:#f0e7d8; --paper:#f8f3ea; --ink:#2b2a26; --muted:#8b8474; --faint:#b3a993; --line:#3a372f; --hair:#d9d0be;
+  --shadow:#d6ccb8; --accent:#2f9e4f; --red:#c9452e; --glow:none;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; --pixel:"Silkscreen",var(--mono);
+  --w:1060px; --r:2px;
+}
+[data-theme=phosphor]{ --bg:#050806; --paper:#0b120d; --ink:#d6ffe2; --muted:#5d8a6b; --faint:#3a5a44; --line:#24543a; --hair:#14261b;
+  --shadow:#020302; --accent:#4cf28d; --red:#ff3b30; --glow:0 0 .4em color-mix(in srgb,var(--accent) 70%,transparent); }
+[data-theme=graphite]{ --bg:#131210; --paper:#1a1916; --ink:#efe7d8; --muted:#6f6a60; --faint:#4a463f; --line:#3a362f; --hair:#26241f;
+  --shadow:#0a0908; --accent:#efe7d8; --red:#e0533d; }
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.6 var(--mono);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.4;
+  background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) .7px,transparent 1px);background-size:4px 4px}
+[hidden]{display:none!important}
+a{color:inherit} ::selection{background:var(--accent);color:var(--bg)}
+.wrap{position:relative;z-index:1;max-width:var(--w);margin:0 auto;padding:0 24px}
+.mut{color:var(--muted)} .acc{color:var(--accent);text-shadow:var(--glow)} .red{color:var(--red)}
+#bgtape{position:fixed;left:0;right:0;bottom:6vh;width:100%;height:140px;pointer-events:none;z-index:0;opacity:.55}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid transparent;transition:border-color .2s}
+.top.solid{border-bottom-color:var(--hair)}
+.top .wrap{display:flex;align-items:center;gap:28px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;text-decoration:none;font-size:15px}
+.brand canvas{width:26px;height:26px;image-rendering:pixelated}
+.nav{display:flex;gap:20px;margin:0 auto;font-size:12.5px}
+.nav a{color:var(--muted);text-decoration:none;padding:6px 0;border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)} .nav a.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* buttons, chips, tags */
+.btn{display:inline-flex;align-items:center;gap:.5em;font:500 13px var(--mono);color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:var(--r);
+  padding:.62em 1.1em;box-shadow:3px 3px 0 var(--shadow);cursor:pointer;text-decoration:none;transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)} .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+[data-theme=phosphor] .btn.pri{background:var(--accent);border-color:var(--accent);box-shadow:3px 3px 0 var(--shadow),var(--glow)}
+.chip{display:inline-block;font-size:12px;padding:.18em .6em;color:var(--muted);border:1px solid transparent;cursor:pointer;background:none;font-family:var(--mono)}
+.chip.on{background:var(--accent);color:var(--bg)} .chip:not(.on):hover{border-color:var(--hair);color:var(--ink)}
+.tag{display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border:1px solid var(--hair);padding:.15em .55em}
+.lamp{display:inline-flex;align-items:center;gap:.5em;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lamp::before{content:"";width:7px;height:7px;background:var(--faint)} .lamp.live::before{background:var(--accent);box-shadow:var(--glow);animation:blink 1.6s steps(1) infinite}
+.cur{display:inline-block;width:.55em;height:1.05em;background:var(--accent);vertical-align:-.17em;margin-left:.1em;box-shadow:var(--glow);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;padding:92px 0 70px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.prompt{font-size:15px;color:var(--muted);min-height:1.6em}
+.prompt .cmd{color:var(--ink)}
+.hero h1{font-size:clamp(38px,5.4vw,62px);line-height:1.04;font-weight:400;letter-spacing:-.035em;margin:22px 0 20px}
+.hero h1 b{font-weight:700}
+.hero .lede{color:var(--muted);max-width:44ch;font-size:15.5px}
+.ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px}
+.ca{display:flex;align-items:center;gap:12px;margin-top:22px;font-size:12px;color:var(--muted)}
+.ca code{color:var(--ink);background:var(--paper);border:1px dashed var(--hair);padding:.3em .6em;font-family:var(--mono);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-vis{position:relative;height:440px}
+.hero-vis canvas.obj{position:absolute;inset:0;width:100%;height:100%}
+.hero-vis .term{position:absolute;right:0;bottom:12px;width:min(330px,80%)}
+
+/* ticker strip */
+.strip{position:relative;z-index:1;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);overflow:hidden;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--paper) 50%,transparent)}
+.strip .run{display:inline-flex;gap:40px;padding:11px 0;animation:run 60s linear infinite}
+@keyframes run{to{transform:translateX(-50%)}}
+
+/* sections */
+section.s{position:relative;z-index:1;padding:110px 0 30px}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.eyebrow b{color:var(--accent);font-weight:500} .eyebrow i{flex:0 0 60px;height:1px;background:var(--hair)}
+h2{font-size:clamp(30px,4vw,46px);font-weight:500;letter-spacing:-.03em;line-height:1.1;margin:18px 0 14px}
+h2 .pr{color:var(--faint);font-weight:400;margin-right:.35em}
+.lede{color:var(--muted);max-width:52ch}
+.rule{height:1px;background:var(--hair);margin:90px 0 0}
+
+/* card + terminal */
+.card{background:var(--paper);border:1.5px solid var(--line);border-radius:var(--r);box-shadow:6px 6px 0 var(--shadow);padding:18px;transition:transform .15s,box-shadow .15s}
+a.card,.card.lift{text-decoration:none;color:inherit;display:block}
+a.card:hover,.card.lift:hover{transform:translate(-2px,-3px);box-shadow:8px 9px 0 var(--shadow)}
+.term{background:var(--paper);border:1.5px solid var(--line);border-radius:var(--r);box-shadow:6px 6px 0 var(--shadow);font-size:13px}
+.term .bar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1.5px solid var(--line);font-size:11px;color:var(--muted)}
+.term .bar i{width:9px;height:9px;border:1.5px solid var(--line);border-radius:50%}
+.term .bar span{margin-left:auto}
+.term .body{padding:14px 16px;line-height:1.9;min-height:3em}
+.term .ln{opacity:.18;transition:opacity .25s} .term .ln.on{opacity:1}
+.term .ln .ok{color:var(--accent);text-shadow:var(--glow)}
+.grid{display:grid;gap:22px}
+.g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+
+/* pinned step sequence */
+.pin{height:300vh} .pin .stick{position:sticky;top:90px}
+.steps{display:grid;grid-template-columns:1fr 1.15fr;gap:40px;margin-top:40px;align-items:start}
+.steplist li{list-style:none;display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--hair);color:var(--faint);transition:color .2s}
+.steplist li b{color:inherit;font-weight:500;width:2em} .steplist li.on{color:var(--ink)} .steplist li.on b{color:var(--accent)}
+.meter{font-size:12px;color:var(--muted);margin-top:14px}
+
+/* fee split */
+.split{display:flex;height:34px;border:1.5px solid var(--line);margin:30px 0 18px}
+.split div{border-right:1.5px solid var(--line);background:repeating-linear-gradient(90deg,var(--c) 0 6px,transparent 6px 8px)}
+.split div:last-child{border-right:0}
+.rows div{display:flex;gap:16px;padding:7px 0;border-bottom:1px dashed var(--hair)} .rows b{width:3em}
+
+/* stat */
+.stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-size:30px;font-weight:500;letter-spacing:-.02em;margin-top:6px}
+
+/* cells (supply / holders grid) */
+.cells{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.cells i{aspect-ratio:1;border:1px dashed var(--hair)} .cells i.f{background:var(--faint);border-color:var(--faint)} .cells i.you{background:var(--accent);border-color:var(--accent)}
+
+/* log */
+.log{height:320px;overflow:hidden;font-size:12.5px;line-height:2;-webkit-mask:linear-gradient(#000 70%,transparent)}
+.log div{display:grid;grid-template-columns:76px 74px 1fr auto;gap:12px;animation:in .35s ease}
+.log .t{color:var(--faint)} .log a{color:var(--muted);text-decoration:none} .log a:hover{color:var(--accent)}
+@keyframes in{from{opacity:0;transform:translateY(-6px)}}
+
+/* man-page faq */
+.man details{border-bottom:1px dashed var(--hair)}
+.man summary{list-style:none;cursor:pointer;padding:18px 0;display:flex;gap:14px;font-weight:500}
+.man summary::-webkit-details-marker{display:none}
+.man summary::before{content:"+";color:var(--accent);width:1em} .man details[open] summary::before{content:"−"}
+.man details p{color:var(--muted);padding:0 0 20px 2.1em;max-width:62ch}
+
+/* footer */
+footer{position:relative;z-index:1;padding:120px 0 60px}
+footer .big{font-size:clamp(34px,6vw,76px);letter-spacing:-.04em;line-height:1}
+footer .fine{display:flex;gap:24px;flex-wrap:wrap;margin-top:50px;font-size:12px;color:var(--muted);border-top:1px solid var(--hair);padding-top:20px}
+
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s} .reveal.in{opacity:1;transform:none}
+@media (max-width:860px){
+  .nav{display:none} .hero{padding-top:56px} .hero .wrap,.steps,.g2,.g3{grid-template-columns:1fr} .g4{grid-template-columns:1fr 1fr}
+  .hero-vis{height:330px} .pin{height:auto} .pin .stick{position:static} .steplist li{color:var(--ink)} .term .ln{opacity:1}
+  .log div{grid-template-columns:60px 64px 1fr} .log div a{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important} .reveal{opacity:1;transform:none} .term .ln{opacity:1}}
+</style>
+<style>
+/* ===== EJECT v2: the page is one terminal session. a sticky command rail on the left, the output on the right. ===== */
+:root{--w:1200px}
+body::before{opacity:.22}
+.top{background:color-mix(in srgb,var(--bg) 82%,transparent)}
+.top .wrap{height:64px}
+.top .live{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-left:auto}
+.nav{margin:0 0 0 40px}
+.dot{width:7px;height:7px;background:var(--faint);display:inline-block;flex:none}
+.dot.on{background:var(--accent);box-shadow:var(--glow);animation:blink 1.6s steps(1) infinite}
+.dot.red{background:var(--red)}
+
+/* hero: the product starts here */
+.hero2{position:relative;min-height:calc(100svh - 64px);display:flex;align-items:center;overflow:hidden;padding:40px 0 90px}
+.hero2 canvas.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hero2 .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;width:100%}
+.hero2 h1{font-size:clamp(50px,7.6vw,108px);font-weight:400;letter-spacing:-.055em;line-height:.94;margin:28px 0 26px}
+.hero2 h1 b{font-weight:700}
+.hero2 .lede{color:var(--muted);font-size:16px;max-width:40ch;line-height:1.65}
+.armbar{display:flex;border:1.5px solid var(--line);background:var(--paper);height:58px;max-width:580px;box-shadow:6px 6px 0 var(--shadow);transition:border-color .15s}
+.armbar:focus-within{border-color:var(--accent)}
+.armbar input{flex:1;background:none;border:0;padding:0 18px;font:14px var(--mono);color:var(--ink);outline:none;min-width:0}
+.armbar input::placeholder{color:var(--faint)}
+.armbar button{border:0;background:var(--accent);color:var(--bg);font:600 13.5px var(--mono);padding:0 24px;cursor:pointer;display:flex;align-items:center;gap:10px;letter-spacing:.02em;box-shadow:var(--glow)}
+.armbar button:active{transform:translateY(1px)}
+.hero2 .armbar{margin-top:36px}
+.try{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:16px;font-size:12px;color:var(--muted);min-height:26px}
+.try .chip{border:1px solid var(--hair);color:var(--ink)}
+.try .chip small{color:var(--muted);margin-left:.45em}
+.hint{font-size:12px;color:var(--muted);min-height:1.6em;margin-top:10px}
+.hint.err{color:var(--red)}
+.liveline{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-top:30px;padding-top:18px;border-top:1px solid var(--hair);max-width:580px}
+.liveline b{color:var(--ink);font-weight:500}
+.statusrow{position:absolute;left:0;right:0;bottom:26px;z-index:1}
+.statusrow .wrap{display:flex !important;gap:28px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.statusrow span{display:inline-flex;align-items:center;gap:8px}
+.statusrow .ca{margin:0 0 0 auto;font-size:11px;letter-spacing:.04em;text-transform:none}
+
+/* the session: every section is a command */
+.sess{position:relative;z-index:1;border-top:1px solid var(--hair)}
+.sess>.wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:72px;padding-top:120px;padding-bottom:120px}
+.rail{position:sticky;top:110px;align-self:start}
+.rail .cmd{font-size:13px;color:var(--muted);white-space:nowrap}
+.rail .cmd b{color:var(--ink);font-weight:500}
+.rail .n{font-size:11px;letter-spacing:.16em;color:var(--faint);margin-bottom:14px}
+.rail h2{font-size:clamp(28px,3vw,38px);font-weight:500;letter-spacing:-.035em;line-height:1.08;margin:16px 0 16px}
+.rail p{color:var(--muted);font-size:14px;line-height:1.7}
+.rail .ctl{margin-top:26px;padding-top:20px;border-top:1px solid var(--hair);display:flex;flex-direction:column;gap:14px}
+.out{min-width:0}
+.k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* race: the same-block story, scroll-driven */
+.race{height:340vh}
+.race>.wrap{position:sticky;top:64px;height:calc(100svh - 64px);padding-top:0;padding-bottom:0;align-items:center}
+.race .rail{position:static}
+.beats{margin-top:26px;display:flex;flex-direction:column;gap:2px}
+.beats li{list-style:none;display:grid;grid-template-columns:2.2em 1fr;padding:10px 0;color:var(--faint);font-size:13.5px;line-height:1.55;transition:color .25s}
+.beats li b{font-weight:500}
+.beats li.done{color:var(--muted)} .beats li.on{color:var(--ink)} .beats li.on b{color:var(--accent);text-shadow:var(--glow)}
+.racebox{border:1px solid var(--hair);background:color-mix(in srgb,var(--paper) 55%,transparent);padding:18px 20px 16px}
+.racebox .hd{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:14px}
+.racebox .hd b{color:var(--ink);font-weight:500}
+#raceCv{display:block;width:100%;image-rendering:pixelated}
+
+/* cockpit */
+.field{display:flex;flex-direction:column;gap:7px}
+.inp{font:13px var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:.68em .8em;width:100%;outline:none;min-width:0}
+.inp::placeholder{color:var(--faint)} .inp:focus{border-color:var(--accent)}
+textarea.inp{resize:vertical;min-height:58px;line-height:1.5}
+.row2{display:flex;gap:8px} .row2 .inp{flex:1}
+.btn.sm{font-size:12px;padding:.5em .9em;box-shadow:2px 2px 0 var(--shadow)}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.toggles .chip{border:1px solid var(--hair)}
+details.adv summary{list-style:none;cursor:pointer;font-size:12px;color:var(--muted)}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary::before{content:"+ ";color:var(--accent)} details.adv[open] summary::before{content:"− "}
+details.adv .field{margin-top:12px}
+.picks{display:flex;flex-wrap:wrap;gap:6px}
+.picks .chip{border:1px solid var(--hair);color:var(--ink)} .picks .chip small{color:var(--muted);margin-left:.4em}
+.out .armbar{max-width:none;box-shadow:none}
+.armed{margin-top:34px;border-top:1px solid var(--hair)}
+.armed .empty{padding:44px 0;color:var(--faint);font-size:13px;line-height:1.9}
+.arow{display:grid;grid-template-columns:20px minmax(90px,1.1fr) minmax(120px,1.2fr) 1fr auto auto;gap:16px;align-items:center;padding:16px 0 16px 14px;border-bottom:1px solid var(--hair);font-size:13px;cursor:pointer;position:relative}
+.arow::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:2px;background:transparent}
+.arow.sel::before{background:var(--accent);box-shadow:var(--glow)}
+.arow .sym{font-weight:600;font-size:15px}
+.arow .sub{color:var(--muted);font-size:11.5px}
+.arow .st{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.arow .x{background:none;border:0;color:var(--faint);font:11.5px var(--mono);cursor:pointer} .arow .x:hover{color:var(--red)}
+.st.watch{color:var(--accent)} .st.fired{color:var(--red)}
+.tapebox{margin-top:40px}
+.tapehd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12px}
+.tapehd .chip{border:1px solid var(--hair)}
+.tape{height:290px;overflow:hidden;font-size:12.5px;line-height:2.1;border-top:1px solid var(--hair);-webkit-mask:linear-gradient(#000 72%,transparent)}
+.tape>div{display:grid;grid-template-columns:70px 40px 92px 1fr auto auto;gap:14px;align-items:center;border-bottom:1px solid color-mix(in srgb,var(--hair) 60%,transparent);animation:in .3s ease}
+.tape .t{color:var(--faint)} .tape a,.tape button{color:var(--muted);text-decoration:none;background:none;border:0;font:inherit;font-size:11.5px;cursor:pointer}
+.tape a:hover,.tape button:hover{color:var(--accent)}
+.tape .hl{background:color-mix(in srgb,var(--red) 13%,transparent)}
+.tape .ph{display:block;border:0;padding-top:56px;color:var(--faint)}
+.role{display:inline-block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border:1px solid currentColor;padding:0 .4em;line-height:1.5;margin-left:.5em}
+.role.dev{color:var(--red)} .role.ins{color:var(--accent)}
+
+/* live */
+.bigstats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.bigstats>div{padding:22px 22px 24px 0}
+.bigstats>div+div{padding-left:22px;border-left:1px solid var(--hair)}
+.bigstats .v{font-size:clamp(30px,3.4vw,46px);font-weight:500;letter-spacing:-.04em;margin-top:10px;line-height:1}
+.lastexit{display:grid;grid-template-columns:auto 1fr auto;gap:8px 28px;align-items:end;padding:34px 0;border-bottom:1px solid var(--hair)}
+.lastexit .big{font-size:clamp(40px,5vw,68px);font-weight:600;letter-spacing:-.045em;line-height:.95}
+.lastexit .what{font-size:15px;line-height:1.6}
+.lastexit .what span{color:var(--muted)}
+.lastexit a{font-size:12px;color:var(--muted);text-decoration:none} .lastexit a:hover{color:var(--accent)}
+.lastexit.wait{display:block;color:var(--faint);font-size:13px}
+.out .log{height:300px;margin-top:6px}
+.out .log div{border-bottom:1px solid color-mix(in srgb,var(--hair) 60%,transparent)}
+.log .k-dev{color:var(--red)} .log .k-ins{color:var(--accent)} .log .k-launch{color:var(--faint)}
+.log .k-dev,.log .k-ins,.log .k-launch{white-space:nowrap}
+.log .ph{display:block;color:var(--faint);padding-top:40px}
+
+/* token */
+.facts{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);margin-top:44px}
+.facts>div{padding:18px 18px 20px 0} .facts>div+div{padding-left:18px;border-left:1px solid var(--hair)}
+.facts .v{font-size:18px;margin-top:8px}
+.selfwatch{display:flex;align-items:center;gap:24px;justify-content:space-between;margin-top:44px;padding:26px 28px;border:1px solid var(--line);background:color-mix(in srgb,var(--paper) 70%,transparent)}
+.selfwatch p{font-size:15px;line-height:1.6;max-width:46ch}
+.selfwatch p span{color:var(--muted)}
+.out .split{margin-top:0}
+
+/* faq + footer */
+.out .man summary{padding:20px 0}
+footer.f2{position:relative;z-index:1;border-top:1px solid var(--hair);padding:120px 0 50px;overflow:hidden}
+footer.f2 .big{font-size:clamp(46px,9vw,140px);letter-spacing:-.06em;line-height:.9;font-weight:400}
+footer.f2 .big b{font-weight:700}
+footer.f2 .ctas{margin-top:40px}
+
+/* alarm */
+.alarm{position:fixed;left:50%;top:76px;z-index:60;width:min(660px,calc(100% - 24px));transform:translate(-50%,calc(-100% - 120px));visibility:hidden;transition:transform .35s cubic-bezier(.2,.9,.3,1.2),visibility 0s .35s;
+  background:var(--red);color:#fff;border:1.5px solid #fff;box-shadow:8px 8px 0 #000,0 0 60px color-mix(in srgb,var(--red) 55%,transparent);padding:16px 18px}
+.alarm.on{transform:translate(-50%,0);visibility:visible;transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}
+.alarm .a-top{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+.alarm .a-main{font-size:21px;font-weight:600;letter-spacing:-.02em;margin:8px 0 4px;line-height:1.25}
+.alarm .a-sub{font-size:12.5px;opacity:.9}
+.alarm .a-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.alarm .btn{background:transparent;color:#fff;border-color:#fff;box-shadow:3px 3px 0 #000;font-size:12px;padding:.5em .9em}
+.alarm .btn.pri{background:#fff;color:var(--red)}
+body.firing::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:55;box-shadow:inset 0 0 0 3px var(--red),inset 0 0 120px color-mix(in srgb,var(--red) 35%,transparent);animation:blink .5s steps(1) 6}
+
+@media (max-width:980px){
+  .sess>.wrap{grid-template-columns:1fr;gap:34px;padding-top:84px;padding-bottom:84px}
+  .rail{position:static}
+  .race{height:auto} .race>.wrap{position:static;height:auto;padding-top:84px;padding-bottom:84px}
+  .bigstats,.facts{grid-template-columns:1fr 1fr} .bigstats>div:nth-child(3),.facts>div:nth-child(3){padding-left:0;border-left:0}
+  .bigstats>div:nth-child(n+3),.facts>div:nth-child(n+3){border-top:1px solid var(--hair)}
+}
+@media (max-width:860px){
+  .hero2{min-height:0;padding:28px 0 130px} .hero2 .wrap{grid-template-columns:1fr;gap:0} .hero2 .vis{height:210px !important;order:-1} .hero2 h1{margin:20px 0 20px}
+  .top .live{display:none} .top .btn{margin-left:auto}
+  .statusrow .wrap{flex-wrap:wrap;gap:8px 18px} .statusrow .ca{margin:0;width:100%}
+  .arow{grid-template-columns:16px 1fr auto;gap:6px 12px} .arow .devc,.arow .insc{grid-column:2/4} .arow .x{grid-column:3;grid-row:1}
+  .arow .st{grid-column:2}
+  .tape>div{grid-template-columns:58px 34px 80px 1fr auto} .tape>div .tx{display:none}
+  .lastexit{grid-template-columns:1fr} .selfwatch{flex-direction:column;align-items:flex-start}
+  .alarm{top:70px} .alarm .a-main{font-size:18px}
+  .armbar button span{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top" id="top"><div class="wrap">
+  <a class="brand" href="#hero"><canvas id="logo"></canvas>eject</a>
+  <nav class="nav"><a href="#race">how</a><a href="#cockpit">cockpit</a><a href="#live">live</a><a href="#token">token</a><a href="#faq">faq</a></nav>
+  <span class="live"><i class="dot" id="topDot"></i><span id="topLive">connecting</span></span>
+  <a class="btn" id="buyTop" href="#token">buy</a>
+</div></header>
+
+<div class="alarm" id="alarm" role="alert" aria-live="assertive">
+  <div class="a-top"><span>⏏ eject</span><span id="alarmTime"></span></div>
+  <div class="a-main" id="alarmMain"></div>
+  <div class="a-sub" id="alarmSub"></div>
+  <div class="a-act"><button class="btn pri" id="alarmShare">share card</button><a class="btn" id="alarmPost" target="_blank" rel="noopener">post on x</a><a class="btn" id="alarmTx" target="_blank" rel="noopener">tx ↗</a><button class="btn" id="alarmX">dismiss</button></div>
+</div>
+
+<section class="hero2" id="hero">
+  <canvas class="bg" id="heroBg"></canvas>
+  <div class="wrap">
+    <div>
+      <div class="prompt"><span>anon@eject ~ %</span> <span class="cmd" id="typed"></span><span class="cur"></span></div>
+      <h1>out before<br>the <b>dev.</b></h1>
+      <p class="lede">EJECT watches the dev and insider wallets on every coin you hold. The block they sell, your bag goes with them.</p>
+      <div class="armbar"><input id="hmint" placeholder="paste a coin you hold" autocomplete="off" spellcheck="false" aria-label="coin ca"><button id="harm">⏏ <span>arm</span></button></div>
+      <div class="hint" id="heroHint"></div>
+      <div class="try" id="tryHero"><span>or arm a fresh launch:</span><span class="mut">waiting for the next one…</span></div>
+      <div class="liveline"><i class="dot" id="lineDot"></i><span id="liveline">connecting to the launch feed…</span></div>
+    </div>
+    <div class="vis" id="heroVis" style="height:520px"></div>
+  </div>
+  <div class="statusrow"><div class="wrap"><span><i class="dot on"></i>wallet watch: live</span><span><i class="dot on"></i>sell alarm: live</span><span><i class="dot"></i>same-block auto-sell: preview</span><span class="ca">ca <code id="ca">posted here and on X at launch</code> <button class="chip" id="copy" hidden>copy</button></span></div></div>
+</section>
+
+<section class="sess race" id="race"><div class="wrap">
+  <div class="rail">
+    <div class="n">01</div>
+    <div class="cmd">anon@eject ~ % <b>eject race</b></div>
+    <h2>the same block.</h2>
+    <p>Every rug has a slot number. EJECT puts your exit in it.</p>
+    <ol class="beats" id="beats">
+      <li><b>01</b>You hold $GLIDE. So does the dev: 4.1% of supply, bought at launch.</li>
+      <li><b>02</b>EJECT has his wallet. One socket, every trade he signs.</li>
+      <li><b>03</b>Slot 117: he sells. EJECT reads it in the logs and fires in the same block.</li>
+      <li><b>04</b>Slot 118: the chart. You're not in it.</li>
+    </ol>
+  </div>
+  <div class="out">
+    <div class="racebox">
+      <div class="hd"><span>slot <b id="slotN">291,044,108</b></span><span class="tag">illustration</span></div>
+      <canvas id="raceCv"></canvas>
+    </div>
+  </div>
+</div></section>
+
+<section class="sess" id="cockpit"><div class="wrap">
+  <div class="rail">
+    <div class="n">02</div>
+    <div class="cmd">anon@eject ~ % <b>eject arm</b> <span class="lamp" id="rpcLamp">connecting</span></div>
+    <h2>your cockpit.</h2>
+    <p>Up to five coins. The dev and every insider you add are watched straight from Solana. Free, in your browser, no wallet connect.</p>
+    <div class="ctl">
+      <div class="k">alarm</div>
+      <div class="toggles"><button class="chip on" id="tSound">sound on</button><button class="chip" id="tNote">notifications off</button><button class="chip" id="tTest">test it</button></div>
+      <div class="k" style="margin-top:8px">load what you hold</div>
+      <div class="row2"><input class="inp" id="owner" placeholder="public wallet address" autocomplete="off" spellcheck="false"><button class="btn sm" id="loadBtn">load</button></div>
+      <div class="hint" id="ownHint" style="margin-top:0">read-only. never a seed phrase or key.</div>
+      <div class="picks" id="held"></div>
+      <details class="adv"><summary>set the dev or insiders yourself</summary>
+        <div class="field"><label class="k" for="dev">dev wallet</label><input class="inp" id="dev" placeholder="auto: found on-chain" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label class="k" for="ins">insiders (up to 8)</label><textarea class="inp" id="ins" placeholder="one wallet per line" spellcheck="false"></textarea></div>
+        <div class="hint" style="margin-top:8px">applies to the next coin you arm.</div>
+      </details>
+    </div>
+  </div>
+  <div class="out">
+    <div class="armbar"><input id="mint" placeholder="paste a pump.fun ca" autocomplete="off" spellcheck="false" aria-label="coin ca"><button id="armBtn">⏏ <span>arm</span></button></div>
+    <div class="hint" id="armHint"></div>
+    <div class="try" id="fresh"><span>fresh launches:</span><span class="mut">waiting for the next one…</span></div>
+    <div class="armed" id="board"></div>
+    <div class="tapebox">
+      <div class="tapehd"><span class="k">tape</span><span id="tapeTabs"></span><span class="mut" style="margin-left:auto" id="tapeNote">every trade on the coin, as it lands</span></div>
+      <div class="tape" id="tape"><span class="ph">arm a coin and its trades land here. dev and insider rows light up.</span></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="sess" id="live"><div class="wrap">
+  <div class="rail">
+    <div class="n">03</div>
+    <div class="cmd">anon@eject ~ % <b>tail -f devs.log</b></div>
+    <h2>how fast devs leave.</h2>
+    <p>Every new pump.fun launch, watched from the second it lands. <span class="lamp" id="lamp">connecting</span></p>
+    <div class="ctl"><div class="k">show</div><div class="toggles"><button class="chip on" data-f="exit">exits</button><button class="chip" data-f="all">everything</button></div>
+      <div class="hint" id="wallNote" style="margin-top:0">since you opened this page</div></div>
+  </div>
+  <div class="out">
+    <div class="bigstats">
+      <div><div class="k">launches watched</div><div class="v" id="sLaunch">0</div></div>
+      <div><div class="k">dev exits caught</div><div class="v red" id="sExit">0</div></div>
+      <div><div class="k">median dev exit</div><div class="v" id="sMed">–</div></div>
+      <div><div class="k">devs out &lt; 60s</div><div class="v acc" id="s60">–</div></div>
+    </div>
+    <div class="lastexit wait" id="lastExit">the next dev to sell shows up here, big.</div>
+    <div class="log" id="log"></div>
+  </div>
+</div></section>
+
+<section class="sess" id="token"><div class="wrap">
+  <div class="rail">
+    <div class="n">04</div>
+    <div class="cmd">anon@eject ~ % <b>eject token</b></div>
+    <h2>fees buy speed.</h2>
+    <p>Getting out in the dev's block takes fast nodes and priority tips. Every $1.00 of creator fees splits the same way.</p>
+    <div class="ctl"><div class="ctas" style="margin-top:0"><a class="btn pri" id="buy" href="#">buy on pump.fun</a><a class="btn" id="xlink" href="#">follow on X</a></div></div>
+  </div>
+  <div class="out">
+    <div class="split"><div style="flex:60;--c:var(--accent)"></div><div style="flex:30;--c:var(--red)"></div><div style="flex:10;--c:var(--faint)"></div></div>
+    <div class="rows"><div><b class="acc">$0.60</b>speed: private rpc + jito tips so ejects land in the dev's block</div><div><b class="red">$0.30</b>buyback + burn $EJECT</div><div><b>$0.10</b>protocol</div></div>
+    <div class="facts">
+      <div><div class="k">ticker</div><div class="v">$EJECT</div></div>
+      <div><div class="k">chain</div><div class="v">solana</div></div>
+      <div><div class="k">supply</div><div class="v">1,000,000,000</div></div>
+      <div><div class="k">team tokens</div><div class="v">none</div></div>
+    </div>
+    <div class="selfwatch"><p>Our dev wallet goes on the board like every other dev. <span>Arm $EJECT and if we ever sell, your alarm goes off first.</span></p>
+      <div><button class="btn pri" id="armSelf">⏏ arm $EJECT</button><div class="hint" id="selfHint"></div></div></div>
+  </div>
+</div></section>
+
+<section class="sess" id="faq"><div class="wrap">
+  <div class="rail">
+    <div class="n">05</div>
+    <div class="cmd">anon@eject ~ % <b>man eject</b></div>
+    <h2>the fine print.</h2>
+    <p>What's live, what's preview, and what EJECT will never ask you for.</p>
+  </div>
+  <div class="out"><div class="man">
+    <details open><summary>is this financial advice?</summary><p>No. EJECT shows what dev and insider wallets do on-chain, the moment they do it. A dev selling isn't always a rug, and EJECT never tells you to buy anything.</p></details>
+    <details><summary>is the auto-sell live?</summary><p>The watch and the alarm are live today: free, in your browser, straight from Solana. Same-block auto-sell runs in preview. It shows you the block it would have sold your bag in and never touches your wallet.</p></details>
+    <details><summary>who counts as an insider?</summary><p>On the live log: wallets that bought in the first seconds of a launch. On your coins: any wallet you add, or tap + watch on the tape. If a dev hides behind fresh wallets, add them and they're watched too.</p></details>
+    <details><summary>which coins work?</summary><p>pump.fun coins on the bonding curve, read from the trade events Solana logs for every buy and sell. Coins that already migrated to PumpSwap are best-effort for now. EJECT watches from the moment you arm a coin. It doesn't replay the past.</p></details>
+    <details><summary>do I need a wallet or keys?</summary><p>No. Paste a coin, or a public address to load what you hold. Never paste a seed phrase or private key anywhere. EJECT will never ask for one.</p></details>
+    <details><summary>will eject DM me?</summary><p>Never. Anyone who does is not us.</p></details>
+  </div></div>
+</div></section>
+
+<footer class="f2"><div class="wrap">
+  <div class="big">out before the <b>dev.</b><span class="cur"></span></div>
+  <div class="ctas"><a class="btn pri" href="#hero">⏏ arm a coin</a></div>
+  <div class="fine" style="display:flex;gap:24px;flex-wrap:wrap;margin-top:60px;font-size:12px;color:var(--muted);border-top:1px solid var(--hair);padding-top:20px"><span>$EJECT · solana</span><span>not financial advice</span><span id="cafoot"></span></div>
+</div></footer>
+
+<script>
+/* termkit.js: pixel objects, long shadow, LED text. Shared by graphics.html and the site. */
+const TK = (() => {
+  const THEMES = {
+    paper: { bg:"#f0e7d8", shadow:"#dcd2bf", ink:"#2b2a26", muted:"#8b8474", accent:"#2f9e4f", red:"#c9452e", card:"#f8f3ea", line:"#3a372f",
+      outline:"#2e2a23", body:"#ece2c9", hi:"#faf5e8", shade:"#cdbf9f", dark:"#a39372", screen:"#16211a", glare:"#24372b", glow:"#45e07f", led:"#45e07f", slot:"#4a4337", glowBlur:0 },
+    phosphor: { bg:"#050806", shadow:"#020302", ink:"#d6ffe2", muted:"#5d8a6b", accent:"#4cf28d", red:"#ff3b30", card:"#0b120d", line:"#1f3b29",
+      outline:"#0d0f0c", body:"#e6dcc0", hi:"#f6f0de", shade:"#c4b693", dark:"#9a8a68", screen:"#0b1a10", glare:"#173323", glow:"#5cff9a", led:"#5cff9a", slot:"#3b352a", glowBlur:.9 },
+    graphite: { bg:"#131210", shadow:"#0a0908", ink:"#efe7d8", muted:"#6f6a60", accent:"#efe7d8", red:"#e0533d", card:"#1a1916", line:"#33302a",
+      outline:"#0a0908", body:"#ece4d3", hi:"#faf6ec", shade:"#c9bfa9", dark:"#9d927b", screen:"#1b1a17", glare:"#2b2925", glow:"#efe7d8", led:"#7fe0a0", slot:"#3d3a33", glowBlur:.5 },
+  };
+
+  // 3x5 pixel font (M, N, W wider). Rows top to bottom.
+  const FONT = {
+    A:["010","101","111","101","101"],B:["110","101","110","101","110"],C:["011","100","100","100","011"],D:["110","101","101","101","110"],
+    E:["111","100","110","100","111"],F:["111","100","110","100","100"],G:["011","100","101","101","011"],H:["101","101","111","101","101"],
+    I:["111","010","010","010","111"],J:["001","001","001","101","010"],K:["101","101","110","101","101"],L:["100","100","100","100","111"],
+    M:["10001","11011","10101","10001","10001"],N:["1001","1101","1011","1001","1001"],O:["010","101","101","101","010"],P:["110","101","110","100","100"],
+    Q:["010","101","101","110","011"],R:["110","101","110","101","101"],S:["011","100","010","001","110"],T:["111","010","010","010","010"],
+    U:["101","101","101","101","111"],V:["101","101","101","101","010"],W:["10001","10001","10101","11011","10001"],X:["101","101","010","101","101"],
+    Y:["101","101","010","010","010"],Z:["111","001","010","100","111"],
+    0:["111","101","101","101","111"],1:["010","110","010","010","111"],2:["110","001","010","100","111"],3:["110","001","010","001","110"],
+    4:["101","101","111","001","001"],5:["111","100","110","001","110"],6:["011","100","111","101","111"],7:["111","001","010","010","010"],
+    8:["111","101","111","101","111"],9:["111","101","111","001","110"]," ":["0","0","0","0","0"],"-":["000","000","111","000","000"],
+    ".":["0","0","0","0","1"],"+":["000","010","111","010","000"],"%":["101","001","010","100","101"],">":["100","010","001","010","100"],"_":["000","000","000","000","111"],
+  };
+  const glyph = ch => FONT[ch.toUpperCase()] || FONT[" "];
+  const textWidth = (s, k = 1) => [...s].reduce((w, ch, i) => w + glyph(ch)[0].length * k + (i ? k : 0), 0);
+
+  function Grid(w, h) {
+    const c = new Array(w * h).fill(null);
+    return {
+      w, h, c,
+      get(x, y) { return x < 0 || y < 0 || x >= w || y >= h ? null : c[y * w + x]; },
+      set(x, y, v) { if (x >= 0 && y >= 0 && x < w && y < h) c[y * w + x] = v; },
+      rect(x, y, rw, rh, v) { for (let j = 0; j < rh; j++) for (let i = 0; i < rw; i++) this.set(x + i, y + j, v); },
+      text(s, x, y, v, k = 1) {
+        let cx = x;
+        for (const ch of s) { const g = glyph(ch);
+          g.forEach((row, j) => [...row].forEach((b, i) => { if (b === "1") this.rect(cx + i * k, y + j * k, k, k, v); }));
+          cx += g[0].length * k + k; }
+      },
+      outline(v = "outline") { // 1-cell outline around everything that is filled
+        const add = [];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+          if (!this.get(x, y) && (this.get(x - 1, y) || this.get(x + 1, y) || this.get(x, y - 1) || this.get(x, y + 1))) add.push([x, y]);
+        add.forEach(([x, y]) => this.set(x, y, v));
+      },
+    };
+  }
+
+  // ---------- Objects. Each returns a Grid of palette keys. Build inside a 1-cell margin, then outline. ----------
+  const OBJECTS = {
+    computer({ ticker = "" } = {}) {
+      const t = ticker.replace(/^\$/, "").toUpperCase();
+      const k = t.length <= 4 ? 2 : 1;
+      const tw = textWidth(t, k);
+      const sw = Math.max(24, tw + 8);                    // screen width grows with the ticker
+      const sh = Math.max(16, Math.round(sw * .52));      // and keeps a CRT-ish ratio
+      const mw = sw + 10, mh = sh + 13;                   // monitor housing
+      const W = mw + 6, H = mh + 18, g = Grid(W, H);
+      const mx = 3, my = 1, sx = mx + 4, sy = my + 3;
+      // monitor housing
+      g.rect(mx, my, mw, mh, "body"); g.set(mx, my, null); g.set(mx + mw - 1, my, null);
+      g.rect(mx + 1, my + 1, mw - 2, 1, "hi"); g.rect(mx + 1, my + 1, 1, mh - 3, "hi");
+      g.rect(mx + mw - 2, my + 1, 1, mh - 2, "shade"); g.rect(mx + 1, my + mh - 2, mw - 2, 1, "shade");
+      // bezel + screen
+      g.rect(sx - 1, sy - 1, sw + 2, sh + 2, "shade"); g.rect(sx - 1, sy - 1, sw + 2, 1, "dark"); g.rect(sx - 1, sy - 1, 1, sh + 2, "dark");
+      g.rect(sx, sy, sw, sh, "screen");
+      [[sx, sy], [sx + sw - 1, sy], [sx, sy + sh - 1], [sx + sw - 1, sy + sh - 1]].forEach(([x, y]) => g.set(x, y, "shade"));
+      // screen content: ticker, then a prompt (big ticker) or a little bar chart (long ticker)
+      const th = 5 * k, ty = sy + Math.max(2, Math.floor((sh - th - 5) / 2));
+      g.text(t, sx + Math.floor((sw - tw) / 2), ty, "glow", k);
+      const by = sy + sh - 3;
+      if (k === 2) { g.set(sx + 3, by - 1, "glow"); g.set(sx + 4, by, "glow"); g.set(sx + 3, by + 1, "glow"); g.rect(sx + 6, by + 1, 3, 1, "glow"); }
+      else { [1, 2, 1, 3, 2, 3, 2, 4, 3, 4].forEach((b, i) => g.rect(sx + Math.floor((sw - 19) / 2) + i * 2, by + 2 - b, 1, b, i === 4 ? "red" : "glow")); }
+      // front panel
+      const py = my + mh - 5;
+      g.rect(mx + 4, py, 2, 1, "led"); g.set(mx + 7, py, "red");
+      const fw = Math.min(12, mw - 16); g.rect(mx + mw - 4 - fw, py, fw, 1, "slot"); g.rect(mx + mw - 4 - fw, py + 1, fw, 1, "hi");
+      // neck (3 rows so the outlines of monitor and keyboard stay separate)
+      const ny = my + mh, nx = mx + Math.floor(mw / 2) - 6;
+      g.rect(nx, ny, 12, 3, "shade"); g.rect(nx, ny, 12, 1, "dark");
+      // keyboard slab
+      const kx = 1, kw = W - 2, ky = ny + 3, kh = 10;
+      g.rect(kx, ky, kw, kh, "body"); g.set(kx, ky, null); g.set(kx + kw - 1, ky, null);
+      g.rect(kx + 1, ky + 1, kw - 2, 1, "hi"); g.rect(kx + 1, ky + kh - 1, kw - 2, 1, "shade");
+      const k0 = kx + 3 + ((kw - 6) % 2 ? 1 : 0), k1 = kx + kw - 3;
+      for (let x = k0; x < k1; x += 2) { g.set(x, ky + 3, "dark"); g.set(x, ky + 5, "dark"); }
+      const mid = kx + Math.floor(kw / 2);
+      for (let x = k0; x < k1; x += 2) if (x < mid - 9 || x > mid + 8) g.set(x, ky + 7, "dark");
+      g.rect(mid - 8, ky + 7, 16, 1, "dark");
+      g.outline();
+      return g;
+    },
+    // Example of a custom object: a framed token with a halo. Copy this pattern for new narratives.
+    frame({ ticker = "" } = {}) {
+      const g = Grid(30, 38), t = ticker.replace(/^\$/, "").toUpperCase().slice(0, 1);
+      g.rect(2, 8, 26, 28, "body"); g.rect(3, 9, 24, 1, "hi"); g.rect(3, 9, 1, 26, "hi"); g.rect(26, 9, 1, 26, "shade"); g.rect(3, 34, 24, 1, "shade");
+      g.rect(6, 12, 18, 20, "screen");
+      g.rect(10, 16, 10, 12, "shade"); g.rect(9, 17, 12, 10, "shade"); g.rect(11, 17, 8, 10, "body"); g.rect(10, 18, 10, 8, "body");
+      g.text(t, 14, 20, "dark");
+      g.outline();
+      // details drawn after the outline stay thin: a halo ring floating above
+      g.rect(11, 1, 8, 1, "hi"); g.rect(8, 2, 3, 1, "hi"); g.rect(19, 2, 3, 1, "hi"); g.set(7, 3, "hi"); g.set(22, 3, "shade");
+      g.rect(8, 4, 3, 1, "shade"); g.rect(19, 4, 3, 1, "shade"); g.rect(11, 5, 8, 1, "shade");
+      return g;
+    },
+    // EJECT: a domed eject button on a hazard-striped deck plate, seen from slightly above.
+    // The dome is the one accent and carries the eject glyph; the ticker is stenciled on the plate.
+    eject({ ticker = "" } = {}) {
+      const W = 48, H = 46, g = Grid(W, H), t = ticker.replace(/^\$/, "").toUpperCase();
+      const hz = (x, y) => ((x + y) >> 1) % 2 ? "outline" : "hi";        // diagonal hazard stripes
+      const ell = (cx, cy, rx, ry, v) => { for (let y = Math.ceil(cy - ry); y <= cy + ry; y++) {   // symmetric pixel ellipse
+        const hw = Math.round(rx * Math.sqrt(Math.max(0, 1 - ((y - cy) / ry) ** 2)));
+        for (let x = Math.ceil(cx - hw); x <= Math.floor(cx + hw - .5); x++) g.set(x, y, v); } };
+      const cx = 23.5;
+      // deck plate: top face with a hazard ring, then the front face with the stenciled ticker
+      g.rect(2, 21, 44, 14, "body");
+      for (let y = 21; y < 35; y++) for (let x = 2; x < 46; x++) if (y < 24 || y > 31 || x < 6 || x > 41) g.set(x, y, hz(x, y));
+      g.rect(6, 24, 36, 1, "shade"); g.rect(6, 25, 1, 7, "shade");          // recess lip
+      g.rect(2, 35, 44, 8, "shade"); g.rect(2, 35, 44, 1, "hi"); g.rect(2, 42, 44, 1, "dark");
+      g.set(2, 21, null); g.set(45, 21, null);
+      g.text(t, Math.round(cx - textWidth(t) / 2), 37, "dark");
+      [[5, 38], [42, 38]].forEach(([x, y]) => g.set(x, y, "dark"));       // screws
+      // collar ring sunk into the deck
+      ell(cx, 28, 15, 4.6, "dark"); ell(cx, 27.4, 13, 3.6, "slot");
+      // dome: cylinder side (ribbed), then the top face with a rim line where they meet
+      const top = 16, ry = 6, rx = 13;
+      g.rect(11, top, 26, 12, "glow"); ell(cx, 27, rx, 2.2, "glow");
+      const rim = {};
+      for (let y = Math.ceil(top - ry); y <= top + ry; y++) {
+        const hw = Math.round(rx * Math.sqrt(Math.max(0, 1 - ((y - top) / ry) ** 2)));
+        for (let x = Math.ceil(cx - hw); x <= Math.floor(cx + hw - .5); x++) { g.set(x, y, "glow"); if (y >= top) rim[x] = y; }
+      }
+      Object.entries(rim).forEach(([x, y]) => g.set(+x, y + 1, "glare"));
+      g.rect(15, top - 4, 4, 1, "hi"); g.rect(14, top - 3, 1, 1, "hi"); g.rect(13, top - 2, 1, 2, "hi");   // specular
+      // eject glyph on the top face: triangle over a bar
+      [[23, 2], [22, 4], [21, 6], [20, 8]].forEach(([x, w], i) => g.rect(x, top - 4 + i, w, 1, "screen"));
+      g.rect(20, top + 1, 8, 1, "screen");
+      g.outline();
+      return g;
+    },
+  };
+
+  // ---------- Rendering ----------
+  function draw(ctx, grid, o) {
+    const th = typeof o.theme === "string" ? THEMES[o.theme] : o.theme;
+    const cell = o.cell, ox = Math.round(o.x), oy = Math.round(o.y);
+    if (o.shadow !== false) {
+      const len = o.shadowLen ?? 2000, dir = o.shadowDir ?? [1, 1];
+      const sil = document.createElement("canvas"); sil.width = grid.w * cell; sil.height = grid.h * cell;
+      const s = sil.getContext("2d"); s.fillStyle = o.shadowColor || th.shadow;
+      for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) if (grid.get(x, y)) s.fillRect(x * cell, y * cell, cell, cell);
+      for (let i = 1; i <= len; i++) ctx.drawImage(sil, ox + dir[0] * i, oy + dir[1] * i);
+    }
+    for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) {
+      const v = grid.get(x, y); if (!v) continue;
+      ctx.fillStyle = th[v] || v;
+      const glowing = (v === "glow" || v === "led") && th.glowBlur;
+      if (glowing) { ctx.shadowColor = th[v]; ctx.shadowBlur = cell * 2.2 * th.glowBlur; } else ctx.shadowBlur = 0;
+      ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+    }
+    ctx.shadowBlur = 0;
+    return { w: grid.w * cell, h: grid.h * cell };
+  }
+
+  // Big LED-matrix text (WIM-style). Square dots with a gap, optional glow.
+  function led(ctx, s, o) {
+    const k = o.cell, gap = o.gap ?? Math.max(1, Math.round(k * .18));
+    let cx = o.x;
+    ctx.fillStyle = o.color; ctx.shadowColor = o.color; ctx.shadowBlur = o.glow ? k * 1.4 : 0;
+    for (const ch of s.toUpperCase()) { const g = glyph(ch);
+      g.forEach((row, j) => [...row].forEach((b, i) => {
+        const sub = o.sub ?? 2; // each font pixel is drawn as sub×sub dots
+        if (b === "1") for (let a = 0; a < sub; a++) for (let c = 0; c < sub; c++)
+          ctx.fillRect(cx + (i * sub + c) * k, o.y + (j * sub + a) * k, k - gap, k - gap);
+        else if (o.dim) { ctx.save(); ctx.globalAlpha = .07; ctx.shadowBlur = 0;
+          for (let a = 0; a < sub; a++) for (let c = 0; c < sub; c++) ctx.fillRect(cx + (i * sub + c) * k, o.y + (j * sub + a) * k, k - gap, k - gap); ctx.restore(); }
+      }));
+      cx += (g[0].length + 1) * (o.sub ?? 2) * k; }
+    ctx.shadowBlur = 0;
+    return cx - o.x;
+  }
+
+  // Fit a canvas to an element at device pixel ratio and return a ctx in CSS pixels.
+  function canvasFor(el) {
+    const c = document.createElement("canvas"), r = el.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    c.width = Math.round(r.width * d); c.height = Math.round(r.height * d);
+    c.style.cssText = "position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated";
+    el.prepend(c); const ctx = c.getContext("2d"); ctx.scale(d, d); ctx.imageSmoothingEnabled = false; return ctx;
+  }
+
+  return { THEMES, FONT, OBJECTS, Grid, draw, led, canvasFor, textWidth };
+})();
+if (typeof module !== "undefined") module.exports = TK;
+</script>
+<script>
+const CONFIG = {
+  ca: "",                 // $EJECT contract address, posted at launch
+  dev: "",                // $EJECT dev wallet, so holders can arm it (optional, found on-chain if empty)
+  x: "https://x.com/", dexscreener: "", site: "", ticker: "$EJECT", object: "eject", theme: document.documentElement.dataset.theme,
+  rpcWs:   ["wss://api.mainnet-beta.solana.com", "wss://solana-rpc.publicnode.com"],     // free, keyless. a free helius url goes first if you get one
+  rpcHttp: ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"],
+  pumpportal: "wss://pumpportal.fun/api/data",   // free new-launch stream
+  wallMints: 24,          // launches watched at once on the live log
+};
+const T = TK.THEMES[CONFIG.theme];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+const short = a => a ? a.slice(0, 4) + "…" + a.slice(-4) : "—";
+const hhmmss = (d = new Date()) => d.toTimeString().slice(0, 8);
+const dur = ms => { const s = Math.max(0, Math.round(ms / 1000)); return s < 90 ? s + "s" : s < 5400 ? Math.round(s / 60) + "m" : (s / 3600).toFixed(1) + "h"; };
+const isAddr = s => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
+const sym = c => c.sym ? "$" + c.sym.replace(/^\$/, "") : short(c.mint);
+const ls = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+/*core*/
+// ---------- on-chain decoding: pump.fun TradeEvent + PumpSwap Buy/SellEvent from "Program data:" logs ----------
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function b58(u) { let n = 0n; for (const b of u) n = n * 256n + BigInt(b); let s = ""; while (n > 0n) { s = B58[Number(n % 58n)] + s; n /= 58n; }
+  for (const b of u) { if (b) break; s = "1" + s; } return s; }
+function b64(s) { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+const DISC = { trade: [189, 219, 127, 211, 78, 230, 97, 238], ammBuy: [103, 244, 82, 31, 44, 245, 119, 119], ammSell: [62, 47, 55, 10, 165, 3, 220, 42] };
+const is = (u, d) => d.every((b, i) => u[i] === b);
+function decode(logs) {
+  const out = [];
+  for (const l of logs || []) {
+    if (!l.startsWith("Program data: ")) continue;
+    let u; try { u = b64(l.slice(14)); } catch { continue; }
+    if (u.length < 16) continue;
+    const dv = new DataView(u.buffer), U = o => Number(dv.getBigUint64(o, true));
+    if (is(u, DISC.trade) && u.length >= 129) {               // pump.fun bonding curve
+      const vs = U(97), vt = U(105);
+      out.push({ amm: false, mint: b58(u.subarray(8, 40)), sol: U(40) / 1e9, tok: U(48) / 1e6, buy: u[56] === 1, user: b58(u.subarray(57, 89)),
+        ts: Number(dv.getBigInt64(89, true)), creator: u.length >= 209 ? b58(u.subarray(177, 209)) : null, mcap: vt ? (vs / 1e9) / (vt / 1e6) * 1e9 : 0 });
+    } else if ((is(u, DISC.ammSell) || is(u, DISC.ammBuy)) && u.length >= 344) {   // PumpSwap after migration
+      const buy = is(u, DISC.ammBuy), pb = U(48), pq = U(56);
+      out.push({ amm: true, mint: null, sol: U(64) / 1e9, tok: U(16) / 1e6, buy, user: b58(u.subarray(152, 184)), ts: Number(dv.getBigInt64(8, true)),
+        creator: b58(u.subarray(312, 344)), bagBefore: U(32) / 1e6, mcap: pb ? (pq / 1e9) / (pb / 1e6) * 1e9 : 0 });
+    }
+  }
+  return out;
+}
+/*endcore*/
+
+// ---------- one websocket to Solana RPC, logsSubscribe per address, reused for everything ----------
+const RPC = (() => {
+  let ws = null, idx = 0, open = false, nextId = 1, retry = 0, errs = 0, state = "off";
+  const keys = new Map(), byReq = new Map(), bySub = new Map(), fns = new Set();
+  const set = s => { state = s; fns.forEach(f => f(s)); };
+  const send = o => { if (open) ws.send(JSON.stringify(o)); };
+  function sub(key) { const id = nextId++; byReq.set(id, key); send({ jsonrpc: "2.0", id, method: "logsSubscribe", params: [{ mentions: [key] }, { commitment: "processed" }] }); }
+  function connect() {
+    set("connecting"); let opened = false;
+    try { ws = new WebSocket(CONFIG.rpcWs[idx % CONFIG.rpcWs.length]); } catch { idx++; return setTimeout(connect, 1500); }
+    ws.onopen = () => { open = opened = true; retry = 0; errs = 0; byReq.clear(); bySub.clear(); keys.forEach((k, key) => { k.subId = null; sub(key); }); set("live"); };
+    ws.onmessage = m => {
+      let d; try { d = JSON.parse(m.data); } catch { return; }
+      if (d.id && byReq.has(d.id)) {
+        const key = byReq.get(d.id); byReq.delete(d.id); const k = keys.get(key);
+        if (d.error) { if (++errs > 4) { idx++; ws.close(); } return; }
+        if (!k) return send({ jsonrpc: "2.0", id: nextId++, method: "logsUnsubscribe", params: [d.result] });
+        k.subId = d.result; bySub.set(d.result, key); return;
+      }
+      if (d.method === "logsNotification") {
+        const key = bySub.get(d.params.subscription), k = key && keys.get(key); if (!k) return;
+        const v = d.params.result.value; if (v.err) return;
+        k.fns.forEach(f => { try { f(v, key); } catch (e) { console.error(e); } });
+      }
+    };
+    ws.onclose = () => { open = false; if (!opened) idx++; set("retry"); setTimeout(connect, Math.min(15000, 1000 * 2 ** retry++)); };
+    ws.onerror = () => {};
+  }
+  return {
+    watch(key, f) { let k = keys.get(key); if (!k) { k = { fns: new Set(), subId: null }; keys.set(key, k); if (open) sub(key); else if (!ws) connect(); } k.fns.add(f); },
+    unwatch(key, f) { const k = keys.get(key); if (!k) return; k.fns.delete(f); if (k.fns.size) return; keys.delete(key);
+      if (k.subId != null) { bySub.delete(k.subId); send({ jsonrpc: "2.0", id: nextId++, method: "logsUnsubscribe", params: [k.subId] }); } },
+    on(f) { fns.add(f); f(state); }, get state() { return state; }, start() { if (!ws) connect(); },
+  };
+})();
+let httpIdx = 0;
+async function rpc(method, params) {
+  let last; for (let i = 0; i < CONFIG.rpcHttp.length; i++) { const at = (httpIdx + i) % CONFIG.rpcHttp.length;
+    try { const r = await fetch(CONFIG.rpcHttp[at], { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+      const j = await r.json(); if (j.error) throw new Error(j.error.message); httpIdx = at; return j.result; } catch (e) { last = e; } }
+  throw last;
+}
+async function balanceOf(owner, mint) {
+  const r = await rpc("getTokenAccountsByOwner", [owner, { mint }, { encoding: "jsonParsed", commitment: "processed" }]);
+  return r.value.reduce((s, a) => s + (+a.account.data.parsed.info.tokenAmount.uiAmount || 0), 0);
+}
+async function coinMeta(mint) {   // pump.fun's public coin endpoint: symbol + creator. optional, the trade events carry the creator too
+  try { const c = new AbortController(); setTimeout(() => c.abort(), 4500);
+    const r = await fetch("https://frontend-api-v3.pump.fun/coins/" + mint, { signal: c.signal }); return r.ok ? await r.json() : null; } catch { return null; }
+}
+
+
+// ---------- header + hero ----------
+if (CONFIG.ca) { $("#ca").textContent = CONFIG.ca; $("#copy").hidden = false; $("#cafoot").textContent = "ca " + CONFIG.ca;
+  $("#copy").onclick = () => navigator.clipboard.writeText(CONFIG.ca).then(() => $("#copy").textContent = "copied").catch(() => {});
+  ["#buy", "#buyTop"].forEach(s => $(s).href = "https://pump.fun/coin/" + CONFIG.ca); }
+else { $("#buy").removeAttribute("href"); $("#buy").textContent = "live at launch"; $("#buy").style.opacity = .6; }
+$("#xlink").href = CONFIG.x;
+
+{ const g = TK.OBJECTS[CONFIG.object]({ ticker: CONFIG.ticker }), c = $("#logo"), k = 2;
+  c.width = g.w * k; c.height = g.h * k; const x = c.getContext("2d"); TK.draw(x, g, { theme: T, cell: k, x: 0, y: 0, shadow: false });
+  c.style.width = Math.round(26 * g.w / g.h) + "px"; }
+
+// hero: the button, big, its long shadow running off the page
+function drawHero() {
+  const hero = $("#hero"), c = $("#heroBg"), d = devicePixelRatio || 1, r = hero.getBoundingClientRect(), a = $("#heroVis").getBoundingClientRect();
+  c.width = r.width * d; c.height = r.height * d; const x = c.getContext("2d"); x.scale(d, d); x.imageSmoothingEnabled = false;
+  const g = TK.OBJECTS[CONFIG.object]({ ticker: CONFIG.ticker });
+  const cell = Math.max(4, Math.floor(Math.min(a.width * .92 / g.w, a.height * .8 / g.h)));
+  const ox = a.left - r.left + (a.width - g.w * cell) * .5, oy = a.top - r.top + (a.height - g.h * cell) * .42;
+  TK.draw(x, g, { theme: T, cell, x: ox, y: oy, shadowLen: 2200 });
+}
+drawHero(); addEventListener("resize", drawHero); document.fonts.ready.then(drawHero);
+
+{ const cmd = "eject arm --live", el = $("#typed"); if (reduce) el.textContent = cmd;
+  else { let i = 0; const t = setInterval(() => { el.textContent = cmd.slice(0, ++i); if (i >= cmd.length) clearInterval(t); }, 70); } }
+
+// ---------- race: scroll-driven, the dev's sell and your exit in the same slot ----------
+const RACE = { N: 16, S: 9, base: 291044108, price: [1, 1.04, 1.1, 1.07, 1.15, 1.22, 1.19, 1.28, 1.34, .58, .44, .4, .36, .33, .31, .3], p: 0 };
+function drawRace() {
+  const c = $("#raceCv"), d = devicePixelRatio || 1, W = Math.round(c.parentElement.clientWidth - 40), H = Math.round(W < 600 ? W * .95 : Math.min(W * .62, innerHeight * .56));
+  if (c.width !== W * d || c.height !== H * d) { c.width = W * d; c.height = H * d; c.style.height = H + "px"; }
+  const x = c.getContext("2d"); x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, W, H);
+  const p = RACE.p, N = RACE.N, S = RACE.S, cw = W / N, upto = Math.min(N, p * N * 1.25 + .6);
+  const top = 22, lane = Math.min(cw * .62, 26), ph = H - top - lane * 2 - 92, y1 = top + ph + 40, y2 = y1 + lane + 30;
+  const F = "11px JetBrains Mono, monospace", px = Math.max(2, Math.round(cw / 14));
+  // slot grid
+  for (let i = 0; i <= N; i++) { x.fillStyle = i <= upto ? "rgba(214,255,226,.07)" : "rgba(214,255,226,.03)"; x.fillRect(Math.round(i * cw), top - 10, 1, H - top + 4); }
+  // price: pixel stair line
+  const max = 1.45, py = v => top + ph - (v / max) * ph;
+  for (let i = 0; i < Math.floor(upto); i++) {
+    const v = RACE.price[i], pv = i ? RACE.price[i - 1] : v, X0 = Math.round(i * cw), X1 = Math.round((i + 1) * cw);
+    x.fillStyle = i >= S ? T.red : T.muted;
+    for (let X = X0; X < X1; X += px * 1.5) x.fillRect(X, Math.round(py(v)), px, px);
+    const a = Math.min(py(v), py(pv)), b = Math.max(py(v), py(pv));
+    for (let Y = a; Y <= b; Y += px * 1.5) x.fillRect(X0, Math.round(Y), px, px);
+  }
+  x.font = F; x.fillStyle = T.faint || T.muted; x.globalAlpha = .7; x.fillText("price", 0, top - 12); x.globalAlpha = 1;
+  // lanes
+  x.font = F; x.fillStyle = T.muted; x.fillText("dev wallet", 0, y1 - 10); x.fillText("your bag", 0, y2 - 10);
+  const g = 3;
+  for (let i = 0; i < N; i++) {
+    const X = i * cw + g, w = cw - g * 2, seen = i < upto;
+    [y1, y2].forEach((Y, r) => {
+      x.strokeStyle = seen ? T.line : "rgba(36,84,58,.35)"; x.lineWidth = 1; x.strokeRect(Math.round(X) + .5, Math.round(Y) + .5, Math.round(w) - 1, lane - 1);
+      if (seen && i < S) { x.fillStyle = "rgba(76,242,141," + (r ? .16 : .08) + ")"; x.fillRect(Math.round(X) + 2, Math.round(Y) + 2, Math.round(w) - 4, lane - 4); }
+    });
+  }
+  // the sell, the eject, the line between them
+  const sx = S * cw + g, sw = cw - g * 2, fired = p > .52, out = p > .58;
+  if (fired) { x.fillStyle = T.red; x.shadowColor = T.red; x.shadowBlur = 14; x.fillRect(Math.round(sx), y1, Math.round(sw), lane); x.shadowBlur = 0;
+    if (sw >= 26) { x.fillStyle = "#fff"; x.font = "600 10px JetBrains Mono, monospace"; x.textAlign = "center"; x.fillText("sell", sx + sw / 2, y1 + lane / 2 + 3.5); } }
+  if (out) { x.fillStyle = T.accent; x.shadowColor = T.accent; x.shadowBlur = 16; x.fillRect(Math.round(sx), y2, Math.round(sw), lane); x.shadowBlur = 0;
+    if (sw >= 26) { x.fillStyle = T.bg; x.font = "600 10px JetBrains Mono, monospace"; x.textAlign = "center"; x.fillText("out", sx + sw / 2, y2 + lane / 2 + 3.5); }
+    x.fillStyle = T.accent; for (let Y = top - 8; Y < y1 - 4; Y += 6) x.fillRect(Math.round(sx + sw / 2), Y, 1, 3);
+    for (let Y = y1 + lane + 3; Y < y2 - 2; Y += 6) x.fillRect(Math.round(sx + sw / 2), Y, 1, 3);
+    x.textAlign = "right"; x.font = "500 11px JetBrains Mono, monospace"; x.fillText("same block", Math.round(sx + sw / 2) - 8, top - 1); }
+  x.textAlign = "left";
+  // after: everyone else rides it down
+  if (p > .8) { const last = RACE.price[N - 1], peak = RACE.price[S - 1], pct = Math.round((1 - last / peak) * 100);
+    const fs = Math.round(Math.max(20, Math.min(34, cw * 1.1)));
+    x.font = "600 " + fs + "px JetBrains Mono, monospace"; x.fillStyle = T.red; x.textAlign = "right";
+    x.fillText("−" + pct + "%", W - 2, top + fs); x.font = F; x.fillStyle = T.muted; if (W >= 500) x.fillText("everyone still holding", W - 2, top + fs + 18); x.textAlign = "left"; }
+  // dev bag + your bag readouts
+  x.font = F; x.textAlign = "right";
+  x.fillStyle = fired ? T.red : T.muted; x.fillText(fired ? "4.1% → 0%" : "4.1% of supply", W, y1 - 10);
+  x.fillStyle = out ? T.accent : T.muted; x.fillText(out ? (W < 500 ? "out, slot " : "sold at the top of slot ") + (RACE.base + S) % 1000 : "holding", W, y2 - 10); x.textAlign = "left";
+  $("#slotN").textContent = (RACE.base + Math.min(N - 1, Math.floor(upto))).toLocaleString("en-US");
+}
+function raceScroll() {
+  const s = $("#race"), r = s.getBoundingClientRect(), span = r.height - innerHeight;
+  const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 1;
+  if (Math.abs(p - RACE.p) < .002 && $("#raceCv").width) return;
+  RACE.p = innerWidth <= 980 ? 1 : p; drawRace();
+  const n = Math.min(3, Math.floor(RACE.p * 4));
+  $$("#beats li").forEach((li, i) => { li.classList.toggle("on", i === n); li.classList.toggle("done", i < n); });
+}
+addEventListener("scroll", () => requestAnimationFrame(raceScroll), { passive: true }); addEventListener("resize", () => { $("#raceCv").width = 0; raceScroll(); });
+document.fonts.ready.then(() => { $("#raceCv").width = 0; raceScroll(); }); raceScroll();
+
+// ---------- live wall: every new launch, dev + early wallets watched until they leave ----------
+const WALL = { coins: new Map(), order: [], events: [], hist: [], launches: 0, exits: [], real: false, preview: false, filter: "exit", last: null };
+function onLaunch(c, fake) {
+  if (!c.mint || WALL.coins.has(c.mint)) return;
+  if (!fake && WALL.preview) stopPreview();
+  if (!fake) WALL.real = true;
+  const ib = +c.initialBuy || 0;
+  const coin = { mint: c.mint, sym: String(c.symbol || "").slice(0, 12), name: c.name || "", dev: c.traderPublicKey, bag: ib > 1e9 ? ib / 1e6 : ib,
+    t0: Date.now(), early: new Set(), exitAt: 0, h: null, fake, rec: null };
+  coin.rec = { t0: coin.t0, exitAt: 0, until: 0 }; WALL.hist.push(coin.rec); if (WALL.hist.length > 3000) WALL.hist.shift();
+  coin.h = v => wallTrade(coin, v);
+  WALL.coins.set(coin.mint, coin); WALL.order.push(coin.mint); WALL.launches++;
+  if (!fake) RPC.watch(coin.mint, coin.h);
+  while (WALL.order.length > CONFIG.wallMints) drop(WALL.order.find(m => WALL.coins.get(m)?.exitAt) || WALL.order[0]);
+  push({ k: "launch", coin, text: `${sym(coin)} launched · dev ${short(coin.dev)}${coin.bag ? " · bought " + (coin.bag / 1e7).toFixed(1) + "%" : ""}` });
+  fresh();
+}
+function drop(mint) {
+  const c = WALL.coins.get(mint); if (!c) return;
+  if (!c.fake) RPC.unwatch(mint, c.h); c.rec.until = Date.now();
+  WALL.coins.delete(mint); WALL.order = WALL.order.filter(m => m !== mint);
+}
+function wallTrade(coin, v) {
+  for (const e of decode(v.logs)) {
+    if (!e.amm && e.mint !== coin.mint) continue;
+    const now = Date.now();
+    if (e.user === coin.dev) {
+      if (e.buy) { coin.bag += e.tok; continue; }
+      const pct = coin.bag > 0 ? Math.min(100, e.tok / coin.bag * 100) : null;
+      coin.bag = Math.max(0, coin.bag - e.tok);
+      if (!coin.exitAt) { coin.exitAt = coin.rec.exitAt = now; WALL.exits.push(now - coin.t0); }
+      const ev = { k: "dev", coin, sig: v.signature, pct, sol: e.sol, mcap: e.mcap, dt: now - coin.t0,
+        text: `${sym(coin)} · ${pct != null ? Math.round(pct) + "% of his bag" : (e.tok / 1e7).toFixed(1) + "% of supply"} · ${e.sol.toFixed(2)} SOL · t+${dur(now - coin.t0)}` };
+      lastExit(ev); push(ev);
+      if (pct == null || coin.bag < 1) setTimeout(() => drop(coin.mint), 20000);
+    } else if (e.buy) { if (now - coin.t0 < 3000) coin.early.add(e.user); }
+    else if (coin.early.has(e.user)) {
+      coin.early.delete(e.user);
+      push({ k: "ins", coin, sig: v.signature, text: `${sym(coin)} · early wallet ${short(e.user)} · ${e.sol.toFixed(2)} SOL · t+${dur(now - coin.t0)}` });
+    }
+  }
+}
+setInterval(() => { const now = Date.now(); [...WALL.coins.values()].forEach(c => { if (now - c.t0 > 300000) drop(c.mint); }); }, 5000);
+
+const KLABEL = { launch: "launch", dev: "dev sold", ins: "insider" };
+function push(ev) {
+  ev.t = hhmmss(); WALL.events.unshift(ev); if (WALL.events.length > 80) WALL.events.pop();
+  if (WALL.filter === "all" || ev.k !== "launch") logRow(ev, true);
+  stats();
+}
+function logRow(ev, anim) {
+  const log = $("#log"); log.querySelector(".ph")?.remove();
+  const d = document.createElement("div"); if (!anim) d.style.animation = "none";
+  const tx = ev.sig ? `<a href="https://solscan.io/tx/${ev.sig}" target="_blank" rel="noopener">tx ↗</a>` : `<a href="https://pump.fun/coin/${ev.coin.mint}" target="_blank" rel="noopener">coin ↗</a>`;
+  d.innerHTML = `<span class="t">${ev.t}</span><span class="k-${ev.k}">${KLABEL[ev.k]}</span><span>${esc(ev.text)}</span>${ev.coin.fake ? "<a>preview</a>" : tx}`;
+  log.prepend(d); while (log.children.length > 12) log.lastChild.remove();
+}
+function relog() { const log = $("#log"); log.innerHTML = "";
+  const evs = WALL.events.filter(e => WALL.filter === "all" || e.k !== "launch").slice(0, 12).reverse(); evs.forEach(e => logRow(e, false));
+  if (!evs.length) log.innerHTML = `<span class="ph">watching ${WALL.coins.size} fresh launches… the first dev to sell lands here.</span>`; }
+$$("[data-f]").forEach(b => b.onclick = () => { WALL.filter = b.dataset.f; $$("[data-f]").forEach(x => x.classList.toggle("on", x === b)); relog(); });
+
+function lastExit(ev) {
+  ev.t = ev.t || hhmmss(); WALL.last = ev; const el = $("#lastExit"); el.classList.remove("wait");
+  el.innerHTML = `<div><div class="k" style="margin-bottom:12px">latest dev exit · ${ev.t}${ev.coin.fake ? " · preview" : ""}</div><div class="big">${esc(sym(ev.coin))}</div></div>
+    <div class="what"><span class="red">dev sold ${ev.pct != null ? Math.round(ev.pct) + "% of his bag" : "his bag"}</span><br><span>${dur(ev.dt)} after launch · ${ev.sol.toFixed(2)} SOL${ev.mcap ? " · " + ev.mcap.toFixed(0) + " SOL mcap" : ""}</span></div>
+    ${ev.sig ? `<a href="https://solscan.io/tx/${ev.sig}" target="_blank" rel="noopener">tx ↗</a>` : "<span></span>"}`;
+}
+
+function stats() {
+  $("#sLaunch").textContent = WALL.launches.toLocaleString("en-US");
+  $("#sExit").textContent = WALL.exits.length.toLocaleString("en-US");
+  if (WALL.exits.length) { const s = [...WALL.exits].sort((a, b) => a - b); $("#sMed").textContent = dur(s[Math.floor(s.length / 2)]); }
+  const now = Date.now(), dec = WALL.hist.filter(h => now - h.t0 >= 60000 && ((h.exitAt && h.exitAt - h.t0 <= 60000) || (h.until || now) - h.t0 >= 60000));
+  if (dec.length >= 5) $("#s60").textContent = Math.round(dec.filter(h => h.exitAt && h.exitAt - h.t0 <= 60000).length / dec.length * 100) + "%";
+  const live = WALL.real && RPC.state === "live";
+  $("#lamp").classList.toggle("live", live); $("#lamp").textContent = live ? "live" : WALL.preview ? "preview" : "connecting";
+  $("#topDot").className = "dot" + (live ? " on" : ""); $("#topLive").textContent = live ? `live · ${WALL.coins.size} launches watched` : WALL.preview ? "preview" : "connecting";
+  // hero live line
+  const n = WALL.exits.length, l = WALL.last, line = $("#liveline");
+  $("#lineDot").className = "dot" + (live ? " on" : WALL.preview ? "" : "");
+  if (!WALL.real && !WALL.preview) line.textContent = "connecting to the launch feed…";
+  else if (!n || !l) line.innerHTML = `${WALL.preview ? "preview · " : ""}watching <b>${WALL.coins.size}</b> fresh launches. the first dev to sell shows up here.`;
+  else line.innerHTML = `${WALL.preview ? "preview · " : ""}<b>${n}</b> dev${n > 1 ? "s" : ""} sold since you opened this page · last: <b>${esc(sym(l.coin))}</b>, ${dur(l.dt)} after launch`;
+}
+setInterval(stats, 3000);
+
+// PumpPortal: free new-token stream (one connection, reused)
+function portal() {
+  let ws; try { ws = new WebSocket(CONFIG.pumpportal); } catch { return setTimeout(portal, 8000); }
+  ws.onopen = () => ws.send(JSON.stringify({ method: "subscribeNewToken" }));
+  ws.onmessage = m => { let d; try { d = JSON.parse(m.data); } catch { return; } if (d.txType === "create" && d.mint) onLaunch(d); };
+  ws.onclose = () => setTimeout(portal, 6000);
+}
+portal(); RPC.start(); RPC.on(s => { const l = $("#rpcLamp"); l.classList.toggle("live", s === "live"); l.textContent = s === "live" ? "rpc live" : s === "retry" ? "reconnecting" : "connecting"; stats(); });
+
+// Preview: only if the live feeds don't answer. Every preview row is labeled.
+let pvTimer = null;
+const pvSyms = ["GLIDE", "NOPE", "BRRR", "CATO", "MOAI", "DRIP", "ZOOM", "LOAF", "HONK", "SNEK", "WAGMI", "BONKO"];
+const fakeAddr = () => Array.from({ length: 44 }, () => B58[Math.floor(Math.random() * 58)]).join("");
+function startPreview() {
+  if (WALL.real || WALL.preview) return; WALL.preview = true; $("#wallNote").textContent = "preview · the live feed isn't reachable from here";
+  const tick = () => {
+    if (Math.random() < .55) onLaunch({ mint: fakeAddr(), symbol: pvSyms[Math.floor(Math.random() * pvSyms.length)], traderPublicKey: fakeAddr(), initialBuy: 1e7 + Math.random() * 6e7 }, true);
+    const cs = [...WALL.coins.values()].filter(c => !c.exitAt);
+    if (cs.length && Math.random() < .5) { const c = cs[Math.floor(Math.random() * cs.length)], now = Date.now(); c.exitAt = c.rec.exitAt = now; WALL.exits.push(now - c.t0);
+      const ev = { k: "dev", coin: c, pct: 100, sol: .4 + Math.random() * 3, mcap: 28 + Math.random() * 30, dt: now - c.t0 };
+      ev.text = `${sym(c)} · 100% of his bag · ${ev.sol.toFixed(2)} SOL · t+${dur(ev.dt)}`; lastExit(ev); push(ev); }
+  };
+  for (let i = 0; i < 8; i++) tick(); pvTimer = setInterval(tick, reduce ? 4000 : 1700);
+}
+function stopPreview() { clearInterval(pvTimer); WALL.preview = false; [...WALL.coins.values()].forEach(c => c.fake && drop(c.mint));
+  WALL.events = WALL.events.filter(e => !e.coin.fake); WALL.exits = []; WALL.launches = 0; WALL.hist = []; WALL.last = null;
+  $("#lastExit").className = "lastexit wait"; $("#lastExit").textContent = "the next dev to sell shows up here, big.";
+  $("#wallNote").textContent = "since you opened this page"; relog(); stats(); }
+setTimeout(() => { if (!WALL.real) startPreview(); }, 9000);
+relog();
+
+// ---------- cockpit: arm coins, watch dev + insiders, alarm on their sells ----------
+const ARM = { coins: [], sel: null };
+const MAXC = 5, MAXI = 8;
+function save() { ls.set("eject.armed", ARM.coins.map(c => ({ mint: c.mint, sym: c.sym, dev: c.dev, ins: c.ins }))); }
+function hint(t, err) { ["#armHint", "#heroHint"].forEach(s => { const h = $(s); h.textContent = t || ""; h.classList.toggle("err", !!err); }); }
+function arm(mint, o = {}) {
+  mint = (mint || "").trim();
+  if (!isAddr(mint)) { hint("that doesn't look like a solana address.", true); return false; }
+  const had = ARM.coins.find(c => c.mint === mint); if (had) { ARM.sel = mint; render(); hint(`${sym(had)} is already armed.`); return true; }
+  if (ARM.coins.length >= MAXC) { hint("5 coins max. disarm one first.", true); return false; }
+  const coin = { mint, sym: o.sym || "", dev: isAddr(o.dev || "") ? o.dev : "", ins: (o.ins || []).filter(isAddr).slice(0, MAXI), hold: {}, tape: [], fired: 0, h: null };
+  coin.h = v => armTrade(coin, v);
+  ARM.coins.push(coin); ARM.sel = mint; RPC.watch(mint, coin.h); save(); render(); hint(`${sym(coin)} armed. watching from now.`);
+  enrich(coin); return true;
+}
+async function enrich(coin) {
+  if (!coin.sym || !coin.dev) { const m = await coinMeta(coin.mint);
+    if (m) { coin.sym = coin.sym || m.symbol || ""; if (!coin.dev && isAddr(m.creator || "")) coin.dev = m.creator; save(); render(); } }
+  holds(coin);
+}
+async function holds(coin) {
+  for (const w of [coin.dev, ...coin.ins].filter(Boolean)) {
+    try { coin.hold[w] = await balanceOf(w, coin.mint); } catch { coin.hold[w] = NaN; /* public rpc busy: alarms fall back to % of supply */ } boardSoon();
+  }
+}
+function disarm(mint) { const c = ARM.coins.find(x => x.mint === mint); if (!c) return; RPC.unwatch(mint, c.h);
+  ARM.coins = ARM.coins.filter(x => x !== c); if (ARM.sel === mint) ARM.sel = ARM.coins[0]?.mint || null; save(); render(); }
+function roleOf(c, w) { return w === c.dev ? "dev" : c.ins.includes(w) ? "ins" : ""; }
+function armTrade(coin, v) {
+  for (const e of decode(v.logs)) {
+    if (!e.amm && e.mint !== coin.mint) continue;
+    if (!coin.dev && e.creator) { coin.dev = e.creator; save(); holds(coin); }
+    const role = roleOf(coin, e.user), row = { t: hhmmss(), e, role, sig: v.signature };
+    coin.tape.unshift(row); if (coin.tape.length > 40) coin.tape.pop();
+    if (role) {
+      const had = coin.hold[e.user];
+      if (e.buy) { if (had >= 0) coin.hold[e.user] = had + e.tok; }
+      else {
+        const before = e.amm && e.bagBefore >= e.tok ? e.bagBefore : had > 0 ? had : null;
+        const pct = before ? Math.min(100, e.tok / before * 100) : null;
+        if (had >= 0) coin.hold[e.user] = Math.max(0, had - e.tok);
+        coin.fired++; fire({ coin, role, user: e.user, pct, tok: e.tok, sol: e.sol, sig: v.signature });
+      }
+    }
+    if (coin.mint === ARM.sel) tapeRow(row, true);
+  }
+  boardSoon();
+}
+let bt = 0; function boardSoon() { if (!bt) bt = setTimeout(() => { bt = 0; board(); }, 250); }
+const holdTxt = h => h == null ? "…" : Number.isNaN(h) ? "—" : h < 1 ? "out" : (h / 1e7).toFixed(2) + "%";
+
+function board() {
+  if (!ARM.coins.length) { $("#board").innerHTML = `<div class="empty">nothing armed yet. paste a coin above, or tap a fresh launch.<br><span class="acc">eject arm --mint &lt;ca&gt;</span></div>`; return; }
+  $("#board").innerHTML = ARM.coins.map(c => {
+    const ins = c.ins.length, held = c.ins.map(w => c.hold[w]).filter(h => h > 0).reduce((a, b) => a + b, 0);
+    return `<div class="arow${c.mint === ARM.sel ? " sel" : ""}" data-m="${c.mint}">
+      <i class="dot ${c.fired ? "red" : "on"}"></i>
+      <div><div class="sym">${esc(sym(c))}</div><div class="sub">${c.sym ? short(c.mint) : "symbol on next trade"}</div></div>
+      <div class="devc"><div class="sub">dev</div>${c.dev ? `${short(c.dev)} <span class="mut">· ${holdTxt(c.hold[c.dev])}</span>` : `<span class="mut">finding on next trade…</span>`}</div>
+      <div class="insc"><div class="sub">insiders</div>${ins ? `${ins} watched${held ? ` <span class="mut">· ${(held / 1e7).toFixed(2)}%</span>` : ""}` : `<span class="mut">none yet · + watch on the tape</span>`}</div>
+      <span class="st ${c.fired ? "fired" : "watch"}">${c.fired ? "⏏ " + c.fired + " sell" + (c.fired > 1 ? "s" : "") : "watching"}</span>
+      <button class="x" data-x="${c.mint}" title="disarm">disarm</button></div>`;
+  }).join("");
+  $$("#board .arow").forEach(el => el.onclick = ev => { if (ev.target.dataset.x) return disarm(ev.target.dataset.x); ARM.sel = el.dataset.m; render(); });
+}
+function tapeRow(r, anim) {
+  const tape = $("#tape"); tape.querySelector(".ph")?.remove();
+  const c = ARM.coins.find(x => x.mint === ARM.sel), d = document.createElement("div"); if (!anim) d.style.animation = "none";
+  if (r.role && !r.e.buy) d.className = "hl";
+  const can = c && !r.role && c.ins.length < MAXI;
+  d.innerHTML = `<span class="t">${r.t}</span><span class="${r.e.buy ? "acc" : "red"}">${r.e.buy ? "buy" : "sell"}</span><span>${r.e.sol.toFixed(3)} SOL</span>
+    <span>${short(r.e.user)}${r.role ? `<span class="role ${r.role}">${r.role === "dev" ? "dev" : "insider"}</span>` : ""}</span>
+    ${can ? `<button data-w="${r.e.user}">+ watch</button>` : "<span></span>"}<a class="tx" href="https://solscan.io/tx/${r.sig}" target="_blank" rel="noopener">tx ↗</a>`;
+  tape.prepend(d); while (tape.children.length > 20) tape.lastChild.remove();
+}
+$("#tape").addEventListener("click", ev => { const w = ev.target.dataset?.w; if (!w) return; const c = ARM.coins.find(x => x.mint === ARM.sel);
+  if (!c || c.ins.includes(w) || c.ins.length >= MAXI) return; c.ins.push(w); save(); holds(c); render(); });
+function tape() {
+  const c = ARM.coins.find(x => x.mint === ARM.sel);
+  $("#tapeTabs").innerHTML = ARM.coins.map(x => `<button class="chip${x.mint === ARM.sel ? " on" : ""}" data-t="${x.mint}">${esc(sym(x))}</button>`).join("");
+  $$("#tapeTabs [data-t]").forEach(b => b.onclick = () => { ARM.sel = b.dataset.t; render(); });
+  const el = $("#tape"); el.innerHTML = "";
+  if (!c) { el.innerHTML = `<span class="ph">arm a coin and its trades land here. dev and insider rows light up.</span>`; return; }
+  if (!c.tape.length) { el.innerHTML = `<span class="ph">armed. waiting for the next trade on ${esc(sym(c))}…</span>`; return; }
+  [...c.tape].slice(0, 20).reverse().forEach(r => tapeRow(r, false));
+}
+function render() { board(); tape(); }
+
+$("#armBtn").onclick = () => { audio(); if (arm($("#mint").value, { dev: $("#dev").value.trim(), ins: $("#ins").value.split(/[\s,]+/) })) { $("#mint").value = ""; $("#dev").value = ""; $("#ins").value = ""; } };
+$("#mint").addEventListener("keydown", e => { if (e.key === "Enter") $("#armBtn").click(); });
+$("#harm").onclick = () => { audio(); if (arm($("#hmint").value)) { $("#hmint").value = ""; setTimeout(() => $("#cockpit").scrollIntoView({ behavior: reduce ? "auto" : "smooth" }), 500); } };
+$("#hmint").addEventListener("keydown", e => { if (e.key === "Enter") $("#harm").click(); });
+
+function fresh() {
+  const cs = WALL.events.filter(e => e.k === "launch" && !e.coin.fake).slice(0, 4).map(e => e.coin);
+  if (!cs.length) return;
+  const chips = cs.map(c => `<button class="chip" data-a="${c.mint}" data-s="${esc(c.sym)}" data-d="${c.dev}">${esc(sym(c))}<small>${dur(Date.now() - c.t0)}</small></button>`).join("");
+  $("#tryHero").innerHTML = `<span>or arm a fresh launch:</span>` + chips; $("#fresh").innerHTML = `<span>fresh launches:</span>` + chips;
+}
+setInterval(fresh, 5000);
+["#tryHero", "#fresh"].forEach(s => $(s).addEventListener("click", ev => { const b = ev.target.closest("[data-a]"); if (!b) return; audio();
+  if (arm(b.dataset.a, { sym: b.dataset.s, dev: b.dataset.d }) && s === "#tryHero") setTimeout(() => $("#cockpit").scrollIntoView({ behavior: reduce ? "auto" : "smooth" }), 500); }));
+
+$("#loadBtn").onclick = async () => {
+  const o = $("#owner").value.trim(), h = $("#ownHint");
+  if (!isAddr(o)) { h.textContent = "paste a public solana address."; h.classList.add("err"); return; }
+  h.classList.remove("err"); h.textContent = "reading your token accounts from solana…";
+  const progs = ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"]; let got = [], ok = false;
+  for (const p of progs) { try { const r = await rpc("getTokenAccountsByOwner", [o, { programId: p }, { encoding: "jsonParsed" }]); ok = true;
+    r.value.forEach(a => { const i = a.account.data.parsed.info, amt = +i.tokenAmount.uiAmount; if (amt > 0 && i.mint.endsWith("pump")) got.push({ mint: i.mint, amt }); }); } catch {} }
+  if (!ok) { h.textContent = "the public rpc didn't answer. paste your coins instead."; h.classList.add("err"); return; }
+  got.sort((a, b) => b.amt - a.amt);
+  h.textContent = got.length ? `${got.length} pump.fun coin${got.length > 1 ? "s" : ""} found. tap to arm.` : "no pump.fun coins in that wallet.";
+  $("#held").innerHTML = got.slice(0, 12).map(g => `<button class="chip" data-a="${g.mint}">${short(g.mint)}<small>${g.amt >= 1e6 ? (g.amt / 1e6).toFixed(1) + "m" : Math.round(g.amt).toLocaleString("en-US")}</small></button>`).join("");
+  got.slice(0, 12).forEach(async g => { const m = await coinMeta(g.mint); const b = $(`#held [data-a="${g.mint}"]`); if (m?.symbol && b) { b.dataset.s = m.symbol; b.firstChild.textContent = "$" + m.symbol; } });
+};
+$("#held").addEventListener("click", ev => { const b = ev.target.closest("[data-a]"); if (!b) return; audio(); arm(b.dataset.a, { sym: b.dataset.s }); });
+
+$("#armSelf").onclick = () => { if (!CONFIG.ca) { $("#selfHint").textContent = "arms the second the ca is live."; return; } audio(); arm(CONFIG.ca, { sym: "EJECT", dev: CONFIG.dev }); $("#cockpit").scrollIntoView({ behavior: "smooth" }); };
+
+// ---------- alarm: sound, notification, banner, share card ----------
+let AC = null, sound = true, notes = false, lastFire = null, alarmT = 0;
+function audio() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch {} }
+function siren() { if (!sound || !AC) return; const t = AC.currentTime;
+  for (let i = 0; i < 6; i++) { const o = AC.createOscillator(), g = AC.createGain(); o.type = "square"; o.frequency.value = i % 2 ? 660 : 990;
+    g.gain.setValueAtTime(.0001, t + i * .16); g.gain.exponentialRampToValueAtTime(.08, t + i * .16 + .01); g.gain.exponentialRampToValueAtTime(.0001, t + i * .16 + .14);
+    o.connect(g).connect(AC.destination); o.start(t + i * .16); o.stop(t + i * .16 + .15); } }
+$("#tSound").onclick = () => { sound = !sound; audio(); $("#tSound").classList.toggle("on", sound); $("#tSound").textContent = sound ? "sound on" : "sound off"; };
+$("#tNote").onclick = async () => { if (!("Notification" in window)) return $("#tNote").textContent = "no notifications here";
+  if (!notes) { const p = Notification.permission === "granted" ? "granted" : await Notification.requestPermission(); notes = p === "granted"; } else notes = false;
+  $("#tNote").classList.toggle("on", notes); $("#tNote").textContent = notes ? "notifications on" : "notifications off"; };
+$("#tTest").onclick = () => { audio(); const c = ARM.coins.find(x => x.mint === ARM.sel) || { mint: "TEST", sym: "TEST", dev: "9fQeTestDev2WkL" };
+  fire({ coin: c, role: "dev", user: c.dev || "9fQeTestDev2WkL", pct: 62, tok: 3.1e7, sol: 4.82, sig: "", test: true }); };
+
+function fire(f) {
+  lastFire = f; const who = f.role === "dev" ? "dev" : "insider " + short(f.user);
+  const amt = f.pct != null ? `${Math.round(f.pct)}% of ${f.role === "dev" ? "his" : "their"} bag` : `${(f.tok / 1e7).toFixed(2)}% of supply`;
+  $("#alarmTime").textContent = (f.test ? "test alarm · " : "") + hhmmss();
+  $("#alarmMain").textContent = `${who} of ${sym(f.coin)} sold ${amt} · ${f.sol.toFixed(2)} SOL`;
+  $("#alarmSub").textContent = f.test ? "this is a test. nothing happened on-chain." : "auto-sell · preview: your bag would have left in this block. nothing was sold for you.";
+  $("#alarmTx").hidden = !f.sig; if (f.sig) $("#alarmTx").href = "https://solscan.io/tx/" + f.sig;
+  $("#alarmPost").href = "https://x.com/intent/post?text=" + encodeURIComponent(`the ${f.role === "dev" ? "dev" : "insiders"} of ${sym(f.coin)} just sold. eject caught it the second it landed.\n\nout before the dev. ${CONFIG.ticker}`);
+  $("#alarm").classList.add("on"); document.body.classList.remove("firing"); void document.body.offsetWidth; document.body.classList.add("firing");
+  siren(); clearTimeout(alarmT); alarmT = setTimeout(() => { $("#alarm").classList.remove("on"); document.body.classList.remove("firing"); }, 30000);
+  if (notes && !f.test) try { new Notification(`⏏ EJECT: ${who} sold ${sym(f.coin)}`, { body: amt + " · " + f.sol.toFixed(2) + " SOL", icon: "/fav.png", tag: f.sig || "eject" }); } catch {}
+  flashTitle(`⏏ ${who} sold ${sym(f.coin)}`);
+}
+$("#alarmX").onclick = () => { $("#alarm").classList.remove("on"); document.body.classList.remove("firing"); };
+let titleT = 0; const baseTitle = document.title;
+function flashTitle(t) { clearInterval(titleT); let i = 0; titleT = setInterval(() => { document.title = i++ % 2 ? baseTitle : t; if (i > 12) { clearInterval(titleT); document.title = baseTitle; } }, 700); }
+
+$("#alarmShare").onclick = () => {
+  const f = lastFire; if (!f) return; const W = 1200, H = 630, c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d");
+  x.fillStyle = T.bg; x.fillRect(0, 0, W, H); x.imageSmoothingEnabled = false;
+  const g = TK.OBJECTS[CONFIG.object]({ ticker: CONFIG.ticker }); TK.draw(x, g, { theme: T, cell: 7, x: 70, y: (H - g.h * 7) / 2 - 20, shadowLen: 900 });
+  const L = 470, F = "JetBrains Mono, monospace";
+  x.fillStyle = T.muted; x.font = `400 22px ${F}`; x.fillText("anon@eject ~ %", L, 150);
+  x.fillStyle = T.ink; x.shadowColor = T.accent; x.shadowBlur = 14; x.font = `500 60px ${F}`; x.fillText("out before", L, 230); x.fillText("the dev.", L, 300); x.shadowBlur = 0;
+  x.fillStyle = T.accent; x.fillRect(L + x.measureText("the dev.").width + 8, 252, 30, 52);
+  x.font = `500 24px ${F}`; x.fillStyle = T.red;
+  x.fillText(`${f.role === "dev" ? "dev" : "insider"} of ${sym(f.coin)} sold`, L, 380);
+  x.fillStyle = T.ink; x.font = `400 22px ${F}`;
+  x.fillText(`${f.pct != null ? Math.round(f.pct) + "% of the bag" : (f.tok / 1e7).toFixed(2) + "% of supply"} · ${f.sol.toFixed(2)} SOL`, L, 418);
+  x.fillStyle = T.muted; x.fillText(`caught ${hhmmss()} · ${f.test ? "test alarm" : "eject fired"}`, L, 456);
+  x.fillStyle = T.accent; x.font = `600 22px ${F}`; x.fillText(CONFIG.ticker, L, 540);
+  x.strokeStyle = T.line; x.lineWidth = 2; x.strokeRect(14, 14, W - 28, H - 28);
+  const a = document.createElement("a"); a.download = `eject-${(f.coin.sym || "coin").toLowerCase()}.png`; a.href = c.toDataURL("image/png"); a.click();
+};
+
+// restore armed coins from last visit
+ls.get("eject.armed", []).forEach(c => arm(c.mint, c)); hint("");
+render(); stats();
+
+// ---------- top bar + active nav ----------
+const secs = $$("section.sess");
+addEventListener("scroll", () => { $("#top").classList.toggle("solid", scrollY > 10);
+  const cur = secs.filter(s => s.getBoundingClientRect().top < innerHeight * .4).pop();
+  $$(".nav a").forEach(a => a.classList.toggle("on", !!cur && a.getAttribute("href") === "#" + cur.id)); }, { passive: true });
+</script>
+</body></html>
