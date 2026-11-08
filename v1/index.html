@@ -501,6 +501,42 @@ const TK = (() => {
       g.outline();
       return g;
     },
+    // EJECT v2 object: a round parachute carrying your bag out. Gores alternate cream and glow (the one accent),
+    // the ticker is stenciled on the bag. Shroud lines are drawn after the outline so they stay thin.
+    parachute({ ticker = "" } = {}) {
+      const W = 46, H = 56, g = Grid(W, H), t = ticker.replace(/^\$/, "").toUpperCase(), cx = 22.5;
+      const span = (y, hw, v) => { for (let x = Math.ceil(cx - hw); x <= Math.floor(cx + hw - .5); x++) g.set(x, y, typeof v === "function" ? v(x, y) : v); };
+      // canopy: half-ellipse, gores radiate from the apex
+      const top = 1, base = 17, rx = 21, ry = base - top, P = 1.75;   // P < 2: a rounder, slightly peaked crown
+      const gore = (x, y) => { const a = Math.atan2(x + .5 - cx, y + .5 - top + 2), k = Math.floor((a + Math.PI / 2) / (Math.PI / 8));
+        const right = x + .5 - cx > rx * .45;
+        return k % 2 ? "glow" : right ? "shade" : "body"; };
+      for (let y = top; y <= base; y++) span(y, Math.round(rx * Math.pow(Math.max(0, 1 - Math.pow((base - y + .35) / (ry + .35), P)), 1 / P)), gore);
+      // scalloped hem: each gore dips one row in its middle
+      for (let x = Math.ceil(cx - rx); x <= Math.floor(cx + rx - .5); x++) {
+        const a = Math.atan2(x + .5 - cx, base + 1.5 - top + 2), f = ((a + Math.PI / 2) / (Math.PI / 8)) % 1;
+        if (f > .22 && f < .78) g.set(x, base + 1, gore(x, base));
+      }
+      g.rect(21, top, 3, 1, "dark");                                         // apex vent
+      // the bag: tied neck, round belly, stenciled ticker
+      const by = 35;
+      [[18, -1], [19, -1], [19, 0], [20, 0], [27, -1], [26, -1], [26, 0], [25, 0]].forEach(([x, d]) => g.set(x, by + d, x < 23 ? "hi" : "shade"));   // ears of the knot, joined to the neck
+      g.rect(20, by, 6, 1, "body");
+      g.rect(20, by + 1, 6, 2, "shade"); g.rect(19, by + 2, 8, 1, "dark");  // gathered neck + tie
+      const prof = [4, 6, 8, 9, 10, 11, 12, 12, 13, 13, 13, 13, 12, 11, 9];
+      prof.forEach((hw, i) => span(by + 3 + i, hw, "body"));
+      for (let i = 0; i < prof.length; i++) { const y = by + 3 + i;                   // light from top-left, shade bottom-right
+        let l = -1, r = -1; for (let x = 0; x < W; x++) if (g.get(x, y) === "body") { if (l < 0) l = x; r = x; }
+        if (l < 0) continue; g.set(l + 1, y, "hi"); if (i < 3) g.rect(l + 2, y, 3, 1, "hi"); g.set(r - 1, y, "shade"); g.set(r - 2, y, "shade"); }
+      g.rect(cx - 10, by + 17, 19, 1, "shade");
+      g.text(t, Math.round(cx - textWidth(t) / 2), by + 9, "dark");
+      g.outline();
+      // shroud lines from the hem to the bag's neck (after the outline: thin)
+      const line = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (!g.get(x, y)) g.set(x, y, "slot"); } };
+      [[-19, -1], [-10, 0], [0, 0], [10, 0], [19, 1]].forEach(([dx, nx]) => line(Math.round(cx + dx - .5), base + 2, Math.round(cx - .5 + nx * 2.5), by - 1));
+      return g;
+    },
   };
 
   // ---------- Rendering ----------
@@ -559,7 +595,7 @@ if (typeof module !== "undefined") module.exports = TK;
 const CONFIG = {
   ca: "TzFCm8fkzTE1KvedAsLUtPP2PnMgfEi44KArPp1pump",  // $EJECT contract address
   dev: "",                // $EJECT dev wallet, so holders can arm it (optional, found on-chain if empty)
-  x: "https://x.com/", dexscreener: "", site: "", ticker: "$EJECT", object: "eject", theme: document.documentElement.dataset.theme,
+  x: "https://x.com/", dexscreener: "", site: "", ticker: "$EJECT", object: "parachute", theme: document.documentElement.dataset.theme,
   rpcWs:   ["wss://api.mainnet-beta.solana.com", "wss://solana-rpc.publicnode.com"],     // free, keyless. a free helius url goes first if you get one
   rpcHttp: ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"],
   pumpportal: "wss://pumpportal.fun/api/data",   // free new-launch stream
